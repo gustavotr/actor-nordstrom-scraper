@@ -7,8 +7,6 @@ log.setLevel(log.LEVELS.DEBUG);
 
 Apify.main(async () => {
     const input = await Apify.getInput();
-    console.log('Input:');
-    console.dir(input);
 
     const { proxy, startUrls } = input;
 
@@ -42,17 +40,17 @@ Apify.main(async () => {
 
             if (type === EnumURLTypes.START_URL) {
                 log.debug('Start url...');
-                parseMainPage({ requestQueue, $, body });
+                await parseMainPage({ requestQueue, $, request, session });
             }
 
             if (type === EnumURLTypes.CATEGORY) {
                 log.debug('Category url...');
-                parseCategory({ requestQueue, $, body, userData: request.userData });
+                await parseCategory({ requestQueue, $, request, session });
             }
 
             if (type === EnumURLTypes.PRODUCT) {
                 log.debug('Product url...');
-                await parseProduct({ requestQueue, $, body, session });
+                await parseProduct({ requestQueue, $, request, session });
             }
         },
 

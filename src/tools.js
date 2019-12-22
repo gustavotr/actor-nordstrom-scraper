@@ -9,47 +9,85 @@ const EnumURLTypes = {
     BRANDS: 'brands ',
 };
 
-const parseMainPage = ({ requestQueue, $, body }) => {
+const BASE_URL = 'https://shop.nordstrom.com';
+
+const parseMainPage = async ({ requestQueue, $ }) => {
+    $('._18W94').each(async function () {
+        const url = BASE_URL + $(this).attr('href');
+        const category = $(this).text();
+        const type = EnumURLTypes.CATEGORY;
+        await requestQueue.addRequest({ url: stripUrl(url), userData: { type, category } });
+    });
 };
 
-const parseCategory = ({ requestQueue, $, body, userData }) => {
-
+const parseCategory = async ({ requestQueue, $, request }) => {
+    const { category } = request.userData;
+    $('article a').each(async function () {
+        const url = BASE_URL + $(this).attr('href');
+        const type = EnumURLTypes.PRODUCT;
+        await requestQueue.addRequest({ url: stripUrl(url), userData: { type, category } });
+    });
 };
 
-const parseProduct = async ({ requestQueue, $, body, session }) => {
+const getColorInfo = el => ({
+    name: el.attr('alt').replace(/(selected|color)/g, '').trim(),
+    img: stripUrl(el.attr('src')),
+});
+
+const parseProduct = async ({ requestQueue, $, request, session }) => {
     const productContext = $('#selling-essentials [itemtype="http://schema.org/Product"]');
     const brandContext = $('#selling-essentials [itemtype="http://schema.org/Brand"]');
     const name = $('h1[itemprop="name"]', productContext).text();
-    const brand = $('span[itemprop="name"]', brandContext).text();
-    const rating = $('[itemprop="ratingValue"]', productContext).text();
-    const price = $('._3p7kp').text();
-    const description = $('._26GPU').text();
-    const colors = [];
 
-    if ($('._1n5Su').length) {
-        $('._1aALu li').map(function () {
-            colors.push($(this).text());
-        });
-    } else {
-        colors.push($('._1NWVA span').text());
-    }
-
-
-    const product = {
-        name,
-        brand,
-        description,
-        rating,
-        price,
-        colors,
-    };
-
-    if (!product.name) {
+    if (!name) {
         session.markBad();
         throw new Error('Could not get product info');
     }
 
-    await Apify.pushData(product);
+    session.markGood();
+
+    const brand = $('span[itemprop="name"]', brandContext).text();
+    const rating = $('[itemprop="ratingValue"]', productContext).text();
+    const salePrice = $('._3p7kp').text();
+    const price = salePrice.match(/(\D+)(\d.+)/)[2];
+    const currency = salePrice.match(/(\D+)(\d.+)/)[1].trim();
+    const description = $('._26GPU').text();
+    const colors = [];
+    const sizes = [];
+
+    $('._5yJth').next('._1LuCz').find('._1zgoP').each(function () {
+        const size = $(this).text();
+        sizes.push(size);
+    });
+
+    if ($('._1n5Su').length) {
+        $('._1aALu li ._2fvOm').each(function () {
+            colors.push(getColorInfo($(this)));
+        });
+    } else {
+        colors.push(getColorInfo($('._1NWVA ._2fvOm')));
+    }
+
+    const { category } = request.userData;
+
+    for (const color of colors) {
+        const product = {
+            name,
+            brand,
+            description,
+            rating,
+            price,
+            salePrice,
+            color: color.name,
+            img: color.img,
+            url: request.url,
+            currency,
+            sizes,
+            category,
+        };
+
+        await Apify.pushData(product);
+    }
 };
 
 const getUrlType = (url) => {
