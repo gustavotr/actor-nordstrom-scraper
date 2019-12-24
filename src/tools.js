@@ -1,4 +1,5 @@
 const Apify = require('apify');
+const crypto = require('crypto');
 
 const { log } = Apify.utils;
 
@@ -20,12 +21,15 @@ const parseMainPage = async ({ requestQueue, $ }) => {
     });
 };
 
-const parseCategory = async ({ requestQueue, $, request }) => {
-    const { category } = request.userData;
+const parseCategory = async ({ requestQueue, $ }) => {
     $('article a').each(async function () {
         const url = BASE_URL + $(this).attr('href');
         const type = EnumURLTypes.PRODUCT;
-        await requestQueue.addRequest({ url: stripUrl(url), userData: { type, category } });
+        if (!type) {
+            log.error('URL does not match accepted patterns');
+            return;
+        }
+        await requestQueue.addRequest({ url: stripUrl(url), userData: { type } });
     });
 };
 
@@ -34,7 +38,40 @@ const getColorInfo = el => ({
     img: stripUrl(el.attr('src')),
 });
 
-const parseProduct = async ({ requestQueue, $, request, session }) => {
+const hash = bytes => crypto.randomBytes(bytes).toString('hex');
+
+const parseProduct = async ({ $, request, session, proxy }) => {
+    const productId = request.url.match(/(.+\/s\/.*\/)(\d+)(\/*.*)/)[2];
+
+    const apiUrl = 'https://shop.nordstrom.com/api/recs';
+    const searchParams = new URLSearchParams([
+        ['page_type', 'product'],
+        ['placement', 'PDP_1,PDP_2,FTR'],
+        ['channel', 'web'],
+        ['bound', '6,6,6'],
+        ['apikey', 'fc9331b029725527fd30edde85e37ce7'],
+        ['session_id', `${hash(4)}-${hash(2)}-${hash(2)}-${hash(2)}-${hash(6)}`],
+        ['shopper_id', hash(16)],
+        ['country_code', 'US'],
+        ['currency_code', 'USD'],
+        ['experiment_id', `${hash(4)}-${hash(2)}-${hash(2)}-${hash(2)}-${hash(6)}`],
+        ['style_id', productId],
+        ['url', request.url],
+    ]);
+
+    const requestOptions = {
+        url: `${apiUrl}?${searchParams.toString()}`,
+        proxyUrl: Apify.getApifyProxyUrl({
+            groups: proxy.apifyProxyGroups,
+            session: session.id,
+        }),
+        abortFunction: () => false,
+        json: true,
+    };
+
+    const { body } = await Apify.utils.requestAsBrowser(requestOptions);
+    const apiProduct = body[2].SeedProduct;
+
     const productContext = $('#selling-essentials [itemtype="http://schema.org/Product"]');
     const brandContext = $('#selling-essentials [itemtype="http://schema.org/Brand"]');
     const name = $('h1[itemprop="name"]', productContext).text();
@@ -68,8 +105,6 @@ const parseProduct = async ({ requestQueue, $, request, session }) => {
         colors.push(getColorInfo($('._1NWVA ._2fvOm')));
     }
 
-    const { category } = request.userData;
-
     for (const color of colors) {
         const product = {
             name,
@@ -77,19 +112,21 @@ const parseProduct = async ({ requestQueue, $, request, session }) => {
             description,
             rating,
             price,
+            gender: apiProduct.Gender,
             salePrice,
             color: color.name,
             img: color.img,
             url: request.url,
             currency,
             sizes,
-            category,
+            apiProduct,
+            peopleAlsoViewed: body[0].Products,
+            boughtTogether: body[1].Products,
         };
 
         await Apify.pushData(product);
     }
 };
-
 const getUrlType = (url) => {
     let type = null;
 

@@ -2,7 +2,7 @@
 	"name": "actor-nordstrom-scraper",
 	"version": "0.0.1",
 	"description": "Apify actor for scraping nordstrom.com",
-    "main": "src/main.js",
+	"main": "src/main.js",
 	"dependencies": {
 		"apify": "^0.17.0",
 		"cheerio": "^1.0.0-rc.3"
@@ -19,8 +19,8 @@
 	},
 	"author": "Gustavo T. Rudiger",
 	"license": "ISC",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/gustavotr/actor-nordstrom-scraper"
-    }
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/gustavotr/actor-nordstrom-scraper"
+	}
 }

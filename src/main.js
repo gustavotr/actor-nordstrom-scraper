@@ -50,7 +50,7 @@ Apify.main(async () => {
 
             if (type === EnumURLTypes.PRODUCT) {
                 log.debug('Product url...');
-                await parseProduct({ requestQueue, $, request, session });
+                await parseProduct({ requestQueue, $, request, session, proxy });
             }
         },
 
