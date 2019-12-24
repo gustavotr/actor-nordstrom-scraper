@@ -91,10 +91,22 @@ const parseProduct = async ({ $, request, session, proxy }) => {
     const description = $('._26GPU').text();
     const colors = [];
     const sizes = [];
+    const sizesCount = [];
 
-    $('._5yJth').next('._1LuCz').find('._1zgoP').each(function () {
-        const size = $(this).text();
-        sizes.push(size);
+    $('span._3s30g').each(function () {
+        if ($(this).html().toLowerCase().match('size info')) {
+            $(this).next('ul').find('li').each(function () {
+                const text = $(this).text();
+                if (text.match(/\d+=\d+/g)) {
+                    const sizesInfo = text.split(',');
+                    sizesInfo.forEach((sizeInfo) => {
+                        const [size, count] = sizeInfo.split('=').map(str => str.trim());
+                        sizes.push(size);
+                        sizesCount.push({ size, count });
+                    });
+                }
+            });
+        }
     });
 
     if ($('._1n5Su').length) {
@@ -119,6 +131,7 @@ const parseProduct = async ({ $, request, session, proxy }) => {
             url: request.url,
             currency,
             sizes,
+            availableSizes: sizesCount,
             apiProduct,
             peopleAlsoViewed: body[0].Products,
             boughtTogether: body[1].Products,
