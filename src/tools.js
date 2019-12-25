@@ -84,10 +84,10 @@ const parseProduct = async ({ $, request, session, proxy }) => {
     session.markGood();
 
     const brand = $('span[itemprop="name"]', brandContext).text();
-    const rating = $('[itemprop="ratingValue"]', productContext).text();
-    const salePrice = $('._3p7kp').text();
-    const price = salePrice.match(/(\D+)(\d.+)/)[2];
-    const currency = salePrice.match(/(\D+)(\d.+)/)[1].trim();
+    const rating = apiProduct.AverageRating || Number($('[itemprop="ratingValue"]', productContext).text());
+    const salePrice = $('._3p7kp').text().match(/(\D+)(\d.+)/)[2];
+    const price = Number(salePrice);
+    const currency = apiProduct.CurrencyCode || $('._3p7kp').text().match(/(\D+)(\d.+)/)[1].trim();
     const description = $('._26GPU').text();
     const colors = [];
     const sizes = [];
@@ -119,6 +119,7 @@ const parseProduct = async ({ $, request, session, proxy }) => {
 
     for (const color of colors) {
         const product = {
+            id: productId,
             name,
             brand,
             description,
