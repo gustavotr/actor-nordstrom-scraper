@@ -1,6 +1,7 @@
 const Apify = require('apify');
 const cheerio = require('cheerio');
-const { parseMainPage, parseCategory, getUrlType, parseProduct, EnumURLTypes, stripUrl } = require('./tools');
+const { parseMainPage, parseCategory, getUrlType, parseProduct, stripUrl } = require('./tools');
+const { BASE_URL, EnumURLTypes } = require('./constants');
 
 const { log } = Apify.utils;
 log.setLevel(log.LEVELS.DEBUG);
@@ -8,7 +9,11 @@ log.setLevel(log.LEVELS.DEBUG);
 Apify.main(async () => {
     const input = await Apify.getInput();
 
-    const { proxy, startUrls } = input;
+    const { proxy, startUrls, maxItems, search, extendOutputFunction } = input;
+
+    if (!startUrls.length) {
+        startUrls.push(BASE_URL);
+    }
 
     const requestQueue = await Apify.openRequestQueue();
     await Promise.all(startUrls.map((url) => {

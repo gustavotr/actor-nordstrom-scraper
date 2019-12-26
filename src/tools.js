@@ -1,16 +1,8 @@
 const Apify = require('apify');
 const crypto = require('crypto');
+const { BASE_URL, EnumURLTypes } = require('./constants');
 
 const { log } = Apify.utils;
-
-const EnumURLTypes = {
-    PRODUCT: 'product',
-    CATEGORY: 'category',
-    START_URL: 'startUrl',
-    BRANDS: 'brands ',
-};
-
-const BASE_URL = 'https://shop.nordstrom.com';
 
 const parseMainPage = async ({ requestQueue, $ }) => {
     $('._18W94').each(async function () {
