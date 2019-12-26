@@ -21,13 +21,22 @@ Apify.main(async () => {
         requestQueue.addRequest({ url: stripUrl(url), userData: { type } });
     }));
 
+    const dataset = await Apify.openDataset();
+    let { itemCount } = await dataset.getInfo();
+
 
     const crawler = new Apify.BasicCrawler({
         requestQueue,
         useSessionPool: true,
-        maxRequestsPerCrawl: 50,
 
         handleRequestFunction: async ({ request, session }) => {
+            if (itemCount >= maxItems) {
+                log.info('Actor reached the max items limit. Crawler is going to halt...');
+                log.info('Crawler Finished.');
+                process.exit();
+            }
+
+
             log.info(`Processing ${request.url}...`);
 
             const requestOptions = {
@@ -56,12 +65,12 @@ Apify.main(async () => {
             if (type === EnumURLTypes.PRODUCT) {
                 log.debug('Product url...');
                 await parseProduct({ requestQueue, $, request, session, proxy });
+                itemCount++;
             }
         },
 
         handleFailedRequestFunction: async ({ request }) => {
             console.log(`Request ${request.url} failed too many times`);
-            await Apify.pushData(request.userData);
         },
     });
 

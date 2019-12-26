@@ -77,13 +77,14 @@ const parseProduct = async ({ $, request, session, proxy }) => {
 
     const brand = $('span[itemprop="name"]', brandContext).text();
     const rating = apiProduct.AverageRating || Number($('[itemprop="ratingValue"]', productContext).text());
-    const salePrice = $('._3p7kp').text().match(/(\D+)(\d.+)/)[2];
-    const price = Number(salePrice);
+    const price = apiProduct.Prices[0].MinPrice || $('._3p7kp').text().match(/(\D+)(\d.+)/)[2];
+    const salePrice = apiProduct.Prices[1].MinPrice;
     const currency = apiProduct.CurrencyCode || $('._3p7kp').text().match(/(\D+)(\d.+)/)[1].trim();
     const description = $('._26GPU').text();
     const colors = [];
     const sizes = [];
     const sizesCount = [];
+    const availableSizes = [];
 
     $('span._3s30g').each(function () {
         if ($(this).html().toLowerCase().match('size info')) {
@@ -95,6 +96,9 @@ const parseProduct = async ({ $, request, session, proxy }) => {
                         const [size, count] = sizeInfo.split('=').map(str => str.trim());
                         sizes.push(size);
                         sizesCount.push({ size, count });
+                        if (count > 0) {
+                            availableSizes.push(size);
+                        }
                     });
                 }
             });
@@ -124,7 +128,8 @@ const parseProduct = async ({ $, request, session, proxy }) => {
             url: request.url,
             currency,
             sizes,
-            availableSizes: sizesCount,
+            availableSizes,
+            sizesCount,
             apiProduct,
             peopleAlsoViewed: body[0].Products,
             boughtTogether: body[1].Products,
