@@ -1,10 +1,9 @@
 const Apify = require('apify');
 const cheerio = require('cheerio');
-const { parseMainPage, parseCategory, getUrlType, getSearchUrl, parseProduct, stripUrl } = require('./tools');
+const safeEval = require('safe-eval');
+const { parseProduct, parseCategory, parseMainPage } = require('./parsers');
+const { log, getUrlType, getSearchUrl, stripUrl, isObject } = require('./tools');
 const { EnumBaseUrl, EnumURLTypes } = require('./constants');
-
-const { log } = Apify.utils;
-log.setLevel(log.LEVELS.DEBUG);
 
 Apify.main(async () => {
     const input = await Apify.getInput();
@@ -15,15 +14,21 @@ Apify.main(async () => {
         throw new Error('startUrls or search parameter must be provided!');
     }
 
-    if (!startUrls.length && !search) {
+    if (startUrls && !startUrls.length && !search) {
         startUrls.push(EnumBaseUrl.MAIN_URL);
     }
 
     const requestQueue = await Apify.openRequestQueue();
-    await Promise.all(startUrls.map((url) => {
-        const type = getUrlType(url);
-        return requestQueue.addRequest({ url: stripUrl(url), userData: { type } });
-    }));
+
+    if (startUrls && startUrls.length) {
+        await Promise.all(startUrls.map((url) => {
+            const type = getUrlType(url);
+            return requestQueue.addRequest({
+                url: stripUrl(url),
+                userData: { type },
+            });
+        }));
+    }
 
     if (search.length) {
         await requestQueue.addRequest({ url: getSearchUrl(search), userData: { type: EnumURLTypes.SEARCH } });
@@ -31,6 +36,18 @@ Apify.main(async () => {
 
     const dataset = await Apify.openDataset();
     let { itemCount } = await dataset.getInfo();
+
+    let extendOutputFunctionObj;
+    if (typeof extendOutputFunction === 'string' && extendOutputFunction.trim() !== '') {
+        try {
+            extendOutputFunctionObj = safeEval(extendOutputFunction);
+        } catch (e) {
+            throw new Error(`'extendOutputFunction' is not valid Javascript! Error: ${e}`);
+        }
+        if (typeof extendOutputFunctionObj !== 'function') {
+            throw new Error('extendOutputFunction is not a function! Please fix it or use just default ouput!');
+        }
+    }
 
 
     const crawler = new Apify.BasicCrawler({
@@ -72,7 +89,16 @@ Apify.main(async () => {
 
             if (type === EnumURLTypes.PRODUCT) {
                 log.debug('Product url...');
-                await parseProduct({ requestQueue, $, request, session, proxy });
+                let userResult;
+                if (extendOutputFunction) {
+                    userResult = await extendOutputFunctionObj($);
+
+                    if (!isObject(userResult)) {
+                        log.error('extendOutputFunction has to return an object!!!');
+                        process.exit(1);
+                    }
+                }
+                await parseProduct({ requestQueue, $, request, session, proxy, userResult });
                 itemCount++;
             }
         },

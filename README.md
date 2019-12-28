@@ -23,24 +23,49 @@ Output is stored in a dataset. Each item is an information about a product. Exam
 
 ```json
 {
-  "id": "4587969",
-  "name": "Quarter Zip Wool Pullover",
-  "brand": "NORDSTROM MEN'S SHOP",
-  "description": "Add to BagSee Full Details",
-  "rating": 4.7,
-  "price": 85,
-  "gender": "M",
-  "salePrice": 50.98,
-  "color": "BLACK CAVIAR",
-  "images": [
-    "https://n.nordstrommedia.com/imagegallery/store/product/zoom/4/_105793904.jpg",
-    "https://n.nordstrommedia.com/imagegallery/store/product/zoom/13/_101176153.jpg"
-  ],
-  "url": "https://shop.nordstrom.com/s/nordstrom-mens-shop-quarter-zip-wool-pullover/4587969",
+  "id": "5537945",
+  "name": "North Shore Thermal Knit Tunic Top",
+  "description": "Comfortably oversized with exposed seaming, this cozy knit tunic is perfect for activities ranging from long beach walks to lounging with intent.",
+  "url": "https://shop.nordstrom.com/s/free-people-north-shore-thermal-knit-tunic-top/5537945/full",
+  "brand": "FREE PEOPLE",
+  "rating": 3.2,
+  "color": "CORAL",
+  "gender": "F",
+  "price": 68,
+  "salePrice": 40.8,
   "currency": "USD",
-  "sizes": [],
+  "images": [
+    "https://n.nordstrommedia.com/imagegallery/store/product/zoom/7/_106001567.jpg",
+    "https://n.nordstrommedia.com/imagegallery/store/product/zoom/17/_106005937.jpg"
+  ],
+  "sizes": [
+    "XS",
+    "S",
+    "M",
+    "L"
+  ],
   "availableSizes": [],
-  "sizesCount": []
+  "scrapedAt": "2019-12-28T16:09:51.368Z",
+  "extra": {
+    "sizesDetail": [
+      {
+        "size": "XS",
+        "info": "0-2"
+      },
+      {
+        "size": "S",
+        "info": "4-6"
+      },
+      {
+        "size": "M",
+        "info": "8-10"
+      },
+      {
+        "size": "L",
+        "info": "12-14."
+      }
+    ]
+  }
 }
 ```
 
@@ -63,9 +88,9 @@ You can return fields to achive 3 different things:
 
 ```js
 ($) => {
-    return {
-        "saleEnd": $('.sale-ends span').text().trim(),
-        "salePrice": 0,
+  return {
+        saleEnd: $('._3p7kp').text().trim(),
+        salePrice: 0,
         url: undefined
     }
 }
@@ -73,33 +98,48 @@ You can return fields to achive 3 different things:
 This example will add a new field `saleEnd`, change the `salePrice` field and remove `url` field
 ```json
 {
-  "saleEnd": "Sale Ends 11/30/19",
-  "categories": [
-    "Jewelry & Accessories"
-  ],
-  "scrapedAt": "2019-11-28T03:26:00.887Z",
-  "title": "Lightweight Giant Check Wool & Silk Scarf",
-  "description": "Burberry's oblong scarf offers lightweight luxe with its sheer, gauzy fabrication.",
-  "designer": null,
-  "itemId": "3611219",
-  "color": "Limestone",
-  "price": 390,
+  "id": "5537945",
+  "name": "North Shore Thermal Knit Tunic Top",
+  "description": "Comfortably oversized with exposed seaming, this cozy knit tunic is perfect for activities ranging from long beach walks to lounging with intent.",
+  "brand": "FREE PEOPLE",
+  "rating": 3.2,
+  "color": "CORAL",
+  "gender": "F",
+  "price": 68,
   "salePrice": 0,
   "currency": "USD",
-  "source": "www.bloomingdales.com",
-  "brand": "Burberry",
   "images": [
-    {
-      "src": "https://images.bloomingdalesassets.com/is/image/BLM/products/9/optimized/10295289_fpx.tif"
-    },
-    {
-      "src": "https://images.bloomingdalesassets.com/is/image/BLM/products/0/optimized/10295290_fpx.tif"
-    }
+    "https://n.nordstrommedia.com/imagegallery/store/product/zoom/7/_106001567.jpg",
+    "https://n.nordstrommedia.com/imagegallery/store/product/zoom/17/_106005937.jpg"
   ],
-  "composition": [
-    "Wool/silk"
+  "sizes": [
+    "XS",
+    "S",
+    "M",
+    "L"
   ],
-  "sizes": [],
-  "availableSizes": []
+  "availableSizes": [],
+  "scrapedAt": "2019-12-28T16:09:51.368Z",
+  "extra": {
+    "sizesDetail": [
+      {
+        "size": "XS",
+        "info": "0-2"
+      },
+      {
+        "size": "S",
+        "info": "4-6"
+      },
+      {
+        "size": "M",
+        "info": "8-10"
+      },
+      {
+        "size": "L",
+        "info": "12-14."
+      }
+    ]
+  },
+  "saleEnd": "$40.8"
 }
 ```
