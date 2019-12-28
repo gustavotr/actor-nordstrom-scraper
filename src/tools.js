@@ -1,6 +1,6 @@
 const Apify = require('apify');
 const crypto = require('crypto');
-const { BASE_URL, EnumURLTypes } = require('./constants');
+const { BASE_URL, BASE_IMG_URL, EnumURLTypes } = require('./constants');
 
 const { log } = Apify.utils;
 
@@ -24,11 +24,6 @@ const parseCategory = async ({ requestQueue, $ }) => {
         await requestQueue.addRequest({ url: stripUrl(url), userData: { type } });
     });
 };
-
-const getColorInfo = el => ({
-    name: el.attr('alt').replace(/(selected|color)/g, '').trim(),
-    img: stripUrl(el.attr('src')),
-});
 
 const hash = bytes => crypto.randomBytes(bytes).toString('hex');
 
@@ -81,7 +76,6 @@ const parseProduct = async ({ $, request, session, proxy }) => {
     const salePrice = apiProduct.Prices[1].MinPrice;
     const currency = apiProduct.CurrencyCode || $('._3p7kp').text().match(/(\D+)(\d.+)/)[1].trim();
     const description = $('._26GPU').text();
-    const colors = [];
     const sizes = [];
     const sizesCount = [];
     const availableSizes = [];
@@ -105,15 +99,7 @@ const parseProduct = async ({ $, request, session, proxy }) => {
         }
     });
 
-    if ($('._1n5Su').length) {
-        $('._1aALu li ._2fvOm').each(function () {
-            colors.push(getColorInfo($(this)));
-        });
-    } else {
-        colors.push(getColorInfo($('._1NWVA ._2fvOm')));
-    }
-
-    for (const color of colors) {
+    for (const color of apiProduct.Colors) {
         const product = {
             id: productId,
             name,
@@ -123,8 +109,8 @@ const parseProduct = async ({ $, request, session, proxy }) => {
             price,
             gender: apiProduct.Gender,
             salePrice,
-            color: color.name,
-            img: color.img,
+            color: color.Name,
+            images: color.Media.map(media => `${BASE_IMG_URL}${media.Path}`),
             url: request.url,
             currency,
             sizes,
