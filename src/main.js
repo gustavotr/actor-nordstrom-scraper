@@ -1,7 +1,7 @@
 const Apify = require('apify');
 const cheerio = require('cheerio');
-const { parseMainPage, parseCategory, getUrlType, parseProduct, stripUrl } = require('./tools');
-const { BASE_URL, EnumURLTypes } = require('./constants');
+const { parseMainPage, parseCategory, getUrlType, getSearchUrl, parseProduct, stripUrl } = require('./tools');
+const { EnumBaseUrl, EnumURLTypes } = require('./constants');
 
 const { log } = Apify.utils;
 log.setLevel(log.LEVELS.DEBUG);
@@ -11,15 +11,23 @@ Apify.main(async () => {
 
     const { proxy, startUrls, maxItems, search, extendOutputFunction } = input;
 
-    if (!startUrls.length) {
-        startUrls.push(BASE_URL);
+    if (!startUrls && !search) {
+        throw new Error('startUrls or search parameter must be provided!');
+    }
+
+    if (!startUrls.length && !search) {
+        startUrls.push(EnumBaseUrl.MAIN_URL);
     }
 
     const requestQueue = await Apify.openRequestQueue();
     await Promise.all(startUrls.map((url) => {
         const type = getUrlType(url);
-        requestQueue.addRequest({ url: stripUrl(url), userData: { type } });
+        return requestQueue.addRequest({ url: stripUrl(url), userData: { type } });
     }));
+
+    if (search.length) {
+        await requestQueue.addRequest({ url: getSearchUrl(search), userData: { type: EnumURLTypes.SEARCH } });
+    }
 
     const dataset = await Apify.openDataset();
     let { itemCount } = await dataset.getInfo();
@@ -57,7 +65,7 @@ Apify.main(async () => {
                 await parseMainPage({ requestQueue, $, request, session });
             }
 
-            if (type === EnumURLTypes.CATEGORY) {
+            if (type === EnumURLTypes.CATEGORY || type === EnumURLTypes.SEARCH) {
                 log.debug('Category url...');
                 await parseCategory({ requestQueue, $, request, session });
             }

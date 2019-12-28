@@ -13,6 +13,7 @@ Nordstrom Scraper is an [Apify actor](https://apify.com/actors) for extracting d
 | ----- | ---- | ----------- | -------------|
 | startUrls | array | List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URL can be home page like `https://shop.nordstrom.com/` or category page `https://shop.nordstrom.com/c/womens-boots` or detail page `https://shop.nordstrom.com/s/born-uchee-knee-high-boot-regular-wide-calf/5243853/full`. | `["https://shop.nordstrom.com/"]`|
 | maxItems | number | Maximum number of products that will be scraped | all found |
+| searh | string | Keyword that will be used to search Nordstrom`s products |  |
 | extendOutputFunction | string | Function that takes a Cheerio handle ($) as argument and returns data that will be merged with the result output. More information in [Extend output function](#extend-output-function) | |
 | proxyConfiguration | object | Proxy settings of the run. This actor works better with the Apify proxy group SHADER. If you have access to this Apify proxy group, leave the default settings. If not, you can use other Apify proxy groups or you can set `{ "useApifyProxy": false" }` to disable proxy usage | `{"useApifyProxy": true, "apifyProxyGroups": ["SHADER"] }`|
 

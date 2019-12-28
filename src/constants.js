@@ -3,13 +3,16 @@ const EnumURLTypes = {
     CATEGORY: 'category',
     START_URL: 'startUrl',
     BRANDS: 'brands ',
+    SEARCH: 'search',
 };
 
-const BASE_URL = 'https://shop.nordstrom.com';
-const BASE_IMG_URL = 'https://n.nordstrommedia.com/imagegallery/store/product/zoom/';
+const EnumBaseUrl = {
+    MAIN_URL: 'https://shop.nordstrom.com',
+    IMG_URL: 'https://n.nordstrommedia.com/imagegallery/store/product/zoom/',
+    SEARCH_URL: 'https://shop.nordstrom.com/sr',
+};
 
 module.exports = {
     EnumURLTypes,
-    BASE_URL,
-    BASE_IMG_URL,
+    EnumBaseUrl,
 };

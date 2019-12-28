@@ -1,12 +1,12 @@
 const Apify = require('apify');
 const crypto = require('crypto');
-const { BASE_URL, BASE_IMG_URL, EnumURLTypes } = require('./constants');
+const { EnumBaseUrl, EnumURLTypes } = require('./constants');
 
 const { log } = Apify.utils;
 
 const parseMainPage = async ({ requestQueue, $ }) => {
     $('._18W94').each(async function () {
-        const url = BASE_URL + $(this).attr('href');
+        const url = EnumBaseUrl.MAIN_URL + $(this).attr('href');
         const category = $(this).text();
         const type = EnumURLTypes.CATEGORY;
         await requestQueue.addRequest({ url: stripUrl(url), userData: { type, category } });
@@ -15,7 +15,7 @@ const parseMainPage = async ({ requestQueue, $ }) => {
 
 const parseCategory = async ({ requestQueue, $ }) => {
     $('article a').each(async function () {
-        const url = BASE_URL + $(this).attr('href');
+        const url = EnumBaseUrl.MAIN_URL + $(this).attr('href');
         const type = EnumURLTypes.PRODUCT;
         if (!type) {
             log.error('URL does not match accepted patterns');
@@ -26,6 +26,14 @@ const parseCategory = async ({ requestQueue, $ }) => {
 };
 
 const hash = bytes => crypto.randomBytes(bytes).toString('hex');
+
+const getSearchUrl = (keyword) => {
+    const params = new URLSearchParams([
+        ['origin', 'keywordsearch'],
+        ['keyword', keyword],
+    ]);
+    return `${EnumBaseUrl.SEARCH_URL}?${params.toString()}`;
+};
 
 const parseProduct = async ({ $, request, session, proxy }) => {
     const productId = request.url.match(/(.+\/s\/.*\/)(\d+)(\/*.*)/)[2];
@@ -110,7 +118,7 @@ const parseProduct = async ({ $, request, session, proxy }) => {
             gender: apiProduct.Gender,
             salePrice,
             color: color.Name,
-            images: color.Media.map(media => `${BASE_IMG_URL}${media.Path}`),
+            images: color.Media.map(media => `${EnumBaseUrl.IMG_URL}${media.Path}`),
             url: request.url,
             currency,
             sizes,
@@ -142,6 +150,9 @@ const getUrlType = (url) => {
     if (url.match(/shop\.nordstrom\.com\/brands\/.+/)) {
         type = EnumURLTypes.BRANDS;
     }
+    if (url.match(/shop\.nordstrom\.com\/sr\?.+/)) {
+        type = EnumURLTypes.SEARCH;
+    }
     return type;
 };
 
@@ -152,6 +163,6 @@ module.exports = {
     parseCategory,
     parseProduct,
     getUrlType,
-    EnumURLTypes,
     stripUrl,
+    getSearchUrl,
 };
