@@ -2,7 +2,7 @@ const Apify = require('apify');
 const cheerio = require('cheerio');
 const safeEval = require('safe-eval');
 const { parseProduct, parseCategory, parseMainPage } = require('./parsers');
-const { log, getUrlType, getSearchUrl, stripUrl, isObject } = require('./tools');
+const { log, getUrlType, getSearchUrl, splitUrl, isObject } = require('./tools');
 const { EnumBaseUrl, EnumURLTypes } = require('./constants');
 
 Apify.main(async () => {
@@ -23,14 +23,17 @@ Apify.main(async () => {
     if (startUrls && startUrls.length) {
         await Promise.all(startUrls.map((url) => {
             const type = getUrlType(url);
+            if (type === EnumURLTypes.PRODUCT) {
+                url = splitUrl(url);
+            }
             return requestQueue.addRequest({
-                url: stripUrl(url),
+                url,
                 userData: { type },
             });
         }));
     }
 
-    if (search.length) {
+    if (search) {
         await requestQueue.addRequest({ url: getSearchUrl(search), userData: { type: EnumURLTypes.SEARCH } });
     }
 
@@ -82,7 +85,7 @@ Apify.main(async () => {
                 await parseMainPage({ requestQueue, $, request, session });
             }
 
-            if (type === EnumURLTypes.CATEGORY || type === EnumURLTypes.SEARCH) {
+            if (type === EnumURLTypes.CATEGORY || type === EnumURLTypes.SEARCH || type === EnumURLTypes.BRANDS) {
                 log.debug('Category url...');
                 await parseCategory({ requestQueue, $, request, session });
             }

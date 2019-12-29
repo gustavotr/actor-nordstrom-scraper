@@ -1,5 +1,5 @@
 const Apify = require('apify');
-const { stripUrl, hash, getProductUrl, log } = require('./tools');
+const { hash, getProductUrl, log } = require('./tools');
 const { EnumBaseUrl, EnumURLTypes } = require('./constants');
 
 const parseMainPage = async ({ requestQueue, $ }) => {
@@ -7,11 +7,11 @@ const parseMainPage = async ({ requestQueue, $ }) => {
         const url = EnumBaseUrl.MAIN_URL + $(this).attr('href');
         const category = $(this).text();
         const type = EnumURLTypes.CATEGORY;
-        await requestQueue.addRequest({ url: stripUrl(url), userData: { type, category } });
+        await requestQueue.addRequest({ url, userData: { type, category } });
     });
 };
 
-const parseCategory = async ({ requestQueue, $ }) => {
+const parseCategory = async ({ requestQueue, $, request }) => {
     $('article a').each(async function () {
         const url = EnumBaseUrl.MAIN_URL + $(this).attr('href');
         const type = EnumURLTypes.PRODUCT;
@@ -21,6 +21,14 @@ const parseCategory = async ({ requestQueue, $ }) => {
         }
         await requestQueue.addRequest({ url: getProductUrl(url), userData: { type } });
     });
+
+    const nextPageUrl = $('._1ZIyZ._1MMVG a').attr('href');
+    if (nextPageUrl) {
+        const urlParams = new URLSearchParams(request.url.split('?')[1]);
+        urlParams.set('page', nextPageUrl.split('=')[1]);
+        urlParams.delete('origin');
+        await requestQueue.addRequest({ url: `${EnumBaseUrl.SEARCH_URL}?${urlParams.toString()}`, userData: request.userData });
+    }
 };
 
 const parseProduct = async ({ $, request, session, proxy, userResult }) => {
@@ -69,7 +77,7 @@ const parseProduct = async ({ $, request, session, proxy, userResult }) => {
     const brand = $('span[itemprop="name"]', brandContext).text();
     const rating = apiProduct.AverageRating || Number($('[itemprop="ratingValue"]', productContext).text());
     const price = apiProduct.Prices[0].MinPrice || $('._3p7kp').text().match(/(\D+)(\d.+)/)[2];
-    const salePrice = apiProduct.Prices[1].MinPrice;
+    const salePrice = apiProduct.Prices[1] ? apiProduct.Prices[1].MinPrice : null;
     const currency = apiProduct.CurrencyCode || $('._3p7kp').text().match(/(\D+)(\d.+)/)[1].trim();
     const description = $('._26GPU').text();
     const sizes = [];

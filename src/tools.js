@@ -46,7 +46,7 @@ const hash = bytes => crypto.randomBytes(bytes).toString('hex');
 
 const isObject = val => typeof val === 'object' && val !== null && !Array.isArray(val);
 
-const stripUrl = url => url.split('?')[0];
+const splitUrl = url => url.split('?')[0];
 
 module.exports = {
     getProductUrl,
@@ -54,6 +54,6 @@ module.exports = {
     getUrlType,
     hash,
     isObject,
-    stripUrl,
+    splitUrl,
     log,
 };
