@@ -4,6 +4,7 @@ const safeEval = require('safe-eval');
 const { parseProduct, parseCategory, parseMainPage } = require('./parsers');
 const { log, getUrlType, getSearchUrl, splitUrl, isObject } = require('./tools');
 const { EnumBaseUrl, EnumURLTypes } = require('./constants');
+const { createProxyWithValidation } = require('./proxy-validation');
 
 Apify.main(async () => {
     const input = await Apify.getInput();
@@ -51,7 +52,9 @@ Apify.main(async () => {
             throw new Error('extendOutputFunction is not a function! Please fix it or use just default ouput!');
         }
     }
-
+    const proxyConfiguration = await createProxyWithValidation({
+        proxyConfig: proxy,
+    });
 
     const crawler = new Apify.BasicCrawler({
         requestQueue,
@@ -64,21 +67,17 @@ Apify.main(async () => {
                 process.exit();
             }
 
-
             log.info(`Processing ${request.url}...`);
 
             const requestOptions = {
                 url: request.url,
-                proxyUrl: Apify.getApifyProxyUrl({
-                    groups: proxy.apifyProxyGroups,
-                    session: session.id,
-                }),
+                proxyUrl: proxyConfiguration.newUrl(session.id),
             };
             const { body } = await Apify.utils.requestAsBrowser(requestOptions);
             const $ = cheerio.load(body);
 
             const { type } = request.userData;
-            log.debug('Type:', type);
+            log.debug(`Type: ${type}`);
 
             if (type === EnumURLTypes.START_URL) {
                 log.debug('Start url...');
@@ -101,7 +100,7 @@ Apify.main(async () => {
                         process.exit(1);
                     }
                 }
-                await parseProduct({ requestQueue, $, request, session, proxy, userResult });
+                await parseProduct({ requestQueue, $, request, session, proxyConfiguration, userResult });
                 itemCount++;
             }
         },

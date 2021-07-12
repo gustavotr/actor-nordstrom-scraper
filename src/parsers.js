@@ -31,7 +31,7 @@ const parseCategory = async ({ requestQueue, $, request }) => {
     }
 };
 
-const parseProduct = async ({ $, request, session, proxy, userResult }) => {
+const parseProduct = async ({ $, request, session, proxyConfiguration, userResult }) => {
     const productId = request.url.match(/(.+\/s\/.*\/)(\d+)(\/*.*)/)[2];
 
     const apiUrl = 'https://shop.nordstrom.com/api/recs';
@@ -50,12 +50,10 @@ const parseProduct = async ({ $, request, session, proxy, userResult }) => {
         ['url', request.url],
     ]);
 
+    const url = `${apiUrl}?${searchParams.toString()}`;
     const requestOptions = {
-        url: `${apiUrl}?${searchParams.toString()}`,
-        proxyUrl: Apify.getApifyProxyUrl({
-            groups: proxy.apifyProxyGroups,
-            session: session.id,
-        }),
+        url,
+        proxyUrl: proxyConfiguration.newUrl(session.id),
         abortFunction: () => false,
         json: true,
     };
@@ -63,9 +61,7 @@ const parseProduct = async ({ $, request, session, proxy, userResult }) => {
     const { body } = await Apify.utils.requestAsBrowser(requestOptions);
     const apiProduct = body[2].SeedProduct;
 
-    const productContext = $('#selling-essentials [itemtype="http://schema.org/Product"]');
-    const brandContext = $('#selling-essentials [itemtype="http://schema.org/Brand"]');
-    const name = $('h1[itemprop="name"]', productContext).text();
+    const name = apiProduct.Name;
 
     if (!name) {
         session.markBad();
@@ -74,11 +70,12 @@ const parseProduct = async ({ $, request, session, proxy, userResult }) => {
 
     session.markGood();
 
-    const brand = $('span[itemprop="name"]', brandContext).text();
-    const rating = apiProduct.AverageRating || Number($('[itemprop="ratingValue"]', productContext).text());
-    const price = apiProduct.Prices[0].MinPrice || $('._3p7kp').text().match(/(\D+)(\d.+)/)[2];
-    const salePrice = apiProduct.Prices[1] ? apiProduct.Prices[1].MinPrice : null;
-    const currency = apiProduct.CurrencyCode || $('._3p7kp').text().match(/(\D+)(\d.+)/)[1].trim();
+    const brand = apiProduct.BrandLabelName;
+    const rating = apiProduct.AverageRating;
+    const prices = apiProduct.Prices;
+    const price = prices.length ? prices[0].MinPrice : null;
+    const salePrice = prices.length > 1 ? apiProduct.Prices[1] : null;
+    const currency = apiProduct.CurrencyCode;
     const description = $('._26GPU').text();
     const sizes = [];
     const sizesDetail = [];
@@ -91,7 +88,7 @@ const parseProduct = async ({ $, request, session, proxy, userResult }) => {
                 if (text.match(/\w+=.+,?\s?/g)) {
                     const sizesInfo = text.split(',');
                     sizesInfo.forEach((sizeInfo) => {
-                        const [size, info] = sizeInfo.split('=').map(str => str.trim());
+                        const [size, info] = sizeInfo.split('=').map((str) => str.trim());
                         sizes.push(size);
                         sizesDetail.push({ size, info });
                         if (info > 0) {
@@ -103,33 +100,39 @@ const parseProduct = async ({ $, request, session, proxy, userResult }) => {
         }
     });
 
-    for (const color of apiProduct.Colors) {
-        const product = {
-            id: productId,
-            name,
-            description,
-            url: request.url,
-            brand,
-            rating,
-            color: color.Name,
-            gender: apiProduct.Gender,
-            price,
-            salePrice,
-            currency,
-            images: color.Media.map(media => `${EnumBaseUrl.IMG_URL}${media.Path}`),
-            sizes,
-            availableSizes,
-            scrapedAt: new Date().toISOString(),
-            extra: {
-                sizesDetail,
-                apiProduct,
-                peopleAlsoViewed: body[0].Products,
-                boughtTogether: body[1].Products,
-            },
-        };
+    const product = {
+        id: productId,
+        name,
+        description,
+        url: request.url,
+        brand,
+        rating,
+        gender: apiProduct.Gender,
+        price,
+        salePrice,
+        currency,
+        sizes,
+        availableSizes,
+        scrapedAt: new Date().toISOString(),
+        extra: {
+            sizesDetail,
+            apiProduct,
+            peopleAlsoViewed: body[0].Products,
+            boughtTogether: body[1].Products,
+        },
+    };
 
-        Object.assign(product, userResult);
+    Object.assign(product, userResult);
 
+    if (apiProduct.Colors.length) {
+        for (const color of apiProduct.Colors) {
+            const colorVariant = {
+                color: color.Name,
+                images: color.Media.map((media) => `${EnumBaseUrl.IMG_URL}${media.Path}`),
+            };
+            await Apify.pushData({ ...product, ...colorVariant });
+        }
+    } else {
         await Apify.pushData(product);
     }
 };
