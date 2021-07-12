@@ -37,18 +37,13 @@
             "type": "object",
             "description": "<strong>Proxy is required to run this actor!</strong> Either use Apify proxy, or provide your own proxy servers.",
             "prefill": {
-                "useApifyProxy": true,
-                "apifyProxyGroups": [ "SHADER" ]
+                "useApifyProxy": true
             },
             "default": {
-                "useApifyProxy": true,
-                "apifyProxyGroups": [ "SHADER" ]
+                "useApifyProxy": true
             },
             "editor": "proxy"
         }
     },
-    "required": [
-        "proxy"
-    ]
+    "required": ["proxy"]
 }
-
