@@ -1,6 +1,6 @@
 {
     "name": "actor-nordstrom-scraper",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Apify actor for scraping nordstrom.com",
     "main": "src/main.js",
     "dependencies": {
