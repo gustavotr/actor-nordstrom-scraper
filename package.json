@@ -9,7 +9,8 @@
         "safe-eval": "^0.4.1"
     },
     "devDependencies": {
-        "@apify/eslint-config": "^0.1.4"
+        "@apify/eslint-config": "^0.1.4",
+        "eslint": "^7.30.0"
     },
     "scripts": {
         "start": "node src/main.js",
